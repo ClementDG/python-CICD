@@ -1,0 +1,125 @@
+name: Python - Test and generate Kubernetes Manifests and Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  NOM: "Dagama"
+  PRENOM: "Clement"
+
+jobs:
+  # =====================================================
+  # 1. VALIDATION DU CODE (Linting & qualité)
+  # =====================================================
+  lint:
+    name: Lint & Qualité du code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer dépendances
+        run: |
+          pip install ruff
+
+      - name: Linting (fail fast)
+        run: |
+          ruff check .
+
+  # =====================================================
+  # 2. TESTS UNITAIRES
+  # =====================================================
+  unit-tests:
+    name: Tests unitaires
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Installer dépendances
+        run: |
+          pip install -r requirements.txt
+      - name: Lancer tests unitaires
+        run: |
+          pytest tests/test_api.py
+
+  # =====================================================
+  # 3. TESTS DE PERFORMANCE
+  # =====================================================
+  performance-tests:
+    name: Validation des performances
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Installer dépendances
+        run: |
+          pip install -r requirements.txt
+      - name: Benchmarks légers
+        run: |
+          pytest tests/test_benchmark.py --benchmark-only
+
+  # =====================================================
+  # 4. GÉNÉRATION & DÉPLOIEMENT
+  # =====================================================
+  generate-and-deploy:
+    name: Build & Deploy to FTP
+    needs: performance-tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install kompose
+        run: |
+          curl -L https://github.com/kubernetes/kompose/releases/download/v1.31.2/kompose-linux-amd64 -o kompose
+          chmod +x kompose
+          sudo mv kompose /usr/local/bin/kompose
+          kompose version
+
+      - name: Generate Kubernetes manifests with kompose
+        run: |
+          echo "Generating Kubernetes manifests from docker-compose.yml..."
+          kompose convert -f docker-compose.yml -o generated/
+          ls -la generated/
+
+      - name: Smoke tests
+        run: |
+          echo "Verification des manifests generes..."
+          test -f generated/python-api-deployment.yaml || exit 1
+          test -f generated/python-api-service.yaml || exit 1
+          test -f generated/api-data-persistentvolumeclaim.yaml || exit 1
+          echo "Tous les manifests requis sont presents"
+
+      - name: Create zip archive
+        run: |
+          cd generated/
+          zip -r ../${{ env.PRENOM }}${{ env.NOM }}Python.zip *.yaml
+          cd ..
+          mkdir -p upload
+          mv ${{ env.PRENOM }}${{ env.NOM }}Python.zip upload/
+          ls -lh upload/
+
+      - name: Upload to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./upload/
+          server-dir: ./RenduDevopsKube/
+          dangerous-salt-security-toggle: true
+          dry-run: false

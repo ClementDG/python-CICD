@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  python-api:
+    build: .
+    image: python-api:v1.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      APP_DB_PATH: /data/app.db
+    volumes:
+      - api-data:/data
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    labels:
+      kompose.service.type: LoadBalancer
+      kompose.volume.size: 1Gi
+
+volumes:
+  api-data:
+    driver: local
