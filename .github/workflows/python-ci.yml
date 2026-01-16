@@ -121,10 +121,10 @@ jobs:
       - name: Create zip archive
         run: |
           cd generated/
-          zip -r ../${{ env.PRENOM }}${{ env.NOM }}Python.zip *.yaml
+          zip -r ../${{ env.NOM }}${{ env.PRENOM }}Python.zip *.yaml
           cd ..
           mkdir -p upload
-          mv ${{ env.PRENOM }}${{ env.NOM }}Python.zip upload/
+          mv ${{ env.NOM }}${{ env.PRENOM }}Python.zip upload/
           ls -lh upload/
 
       - name: Upload to FTP
