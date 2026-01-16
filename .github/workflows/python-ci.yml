@@ -112,8 +112,9 @@ jobs:
       - name: Smoke tests
         run: |
           echo "Verification des manifests generes..."
+          ls -R generated/
           test -f generated/python-api-deployment.yaml || exit 1
-          test -f generated/python-api-service.yaml || exit 1
+          test -f generated/python-api-tcp-service.yaml || exit 1
           test -f generated/api-data-persistentvolumeclaim.yaml || exit 1
           echo "Tous les manifests requis sont presents"
 
