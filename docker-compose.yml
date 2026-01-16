@@ -3,7 +3,7 @@ version: '3.8'
 services:
   python-api:
     build: .
-    image: python-api:v1.0.0
+    image: clementdg/python-api:v1.0.0
     ports:
       - "8000:8000"
     environment:
