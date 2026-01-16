@@ -1,4 +1,3 @@
-import pytest
 from utils import doThing
 
 def test_do_thing_performance(benchmark):
