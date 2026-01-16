@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Ajouter le dossier parent au path pour importer les modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from utils import doThing
 
 def test_do_thing_performance(benchmark):
