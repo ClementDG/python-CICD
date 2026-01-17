@@ -135,5 +135,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./upload/
           server-dir: ./RenduDevopsKube/
+          dangerous-clean-slate: false
+          state-name: "none"
           dangerous-salt-security-toggle: true
           dry-run: false
